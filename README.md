@@ -1,10 +1,10 @@
 # OfficeMind — 企业级全栈 AI 自动化办公助手
 
 > **NVIDIA 首届 DGX Spark 全栈 AI 开发黑客松参赛项目**
-> 三层 Claw 架构 · TensorRT-LLM 推理 · 全本地化部署 · 零云端依赖
+> 三层 Claw 架构 · vLLM 推理 · 全本地化部署 · 零云端依赖
 
 [![Platform](https://img.shields.io/badge/Platform-NVIDIA%20DGX%20Spark%20GB10-76b900?style=for-the-badge&logo=nvidia)](https://www.nvidia.com/en-us/products/workstations/dgx-spark/)
-[![Engine](https://img.shields.io/badge/Engine-TensorRT--LLM-76b900?style=for-the-badge&logo=nvidia)](https://github.com/NVIDIA/TensorRT-LLM)
+[![Engine](https://img.shields.io/badge/Engine-vLLM-76b900?style=for-the-badge&logo=nvidia)](https://github.com/vllm-project/vllm)
 [![Framework](https://img.shields.io/badge/Framework-NemoClaw%20%2B%20OpenClaw-blue?style=for-the-badge)](https://github.com/HeKun-NVIDIA/nemoclaw_on_dgx_spark)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
@@ -12,7 +12,7 @@
 
 ## 项目简介
 
-OfficeMind 是一套完全运行在 **NVIDIA DGX Spark GB10**（Blackwell 架构，128GB 统一内存）上的企业级 AI 自动化办公助手。项目以 **RCClaw**（自研多通道网关）为顶层接入层，通过 **NemoClaw**（NVIDIA 官方 DGX Spark 插件）调度 **OpenClaw Agent 框架**，底层由 **TensorRT-LLM** 提供高性能推理，实现邮件智能处理、企业文档问答（RAG）、屏幕视觉理解、浏览器自动化和结构化报告生成五大核心功能。
+OfficeMind 是一套完全运行在 **NVIDIA DGX Spark GB10**（Blackwell 架构，128GB 统一内存）上的企业级 AI 自动化办公助手。项目以 **RCClaw**（自研多通道网关）为顶层接入层，通过 **NemoClaw**（NVIDIA 官方 DGX Spark 插件）调度 **OpenClaw Agent 框架**，底层由 **vLLM** 提供高性能推理，实现邮件智能处理、企业文档问答（RAG）、屏幕视觉理解、浏览器自动化和结构化报告生成五大核心功能。
 
 **全部模型本地化部署，零云端 API 依赖，数据不出节点。**
 
@@ -45,9 +45,9 @@ OfficeMind 是一套完全运行在 **NVIDIA DGX Spark GB10**（Blackwell 架构
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────┐
-│  TensorRT-LLM 推理层（NVIDIA 官方引擎）                     │
+│  vLLM 推理层（高性能推理框架）                              │
 │  Qwen3-80B :8000 · Qwen2.5-VL :8001 · BGE :8002          │
-│  trtllm-serve / Dynamo / LLM API 三种部署模式              │
+│  支持 CUDA 加速，充分利用 GB10 统一内存                     │
 └──────────────────────────────────────────────────────────┘
                          │
                          ▼
@@ -91,7 +91,7 @@ OfficeMind 是一套完全运行在 **NVIDIA DGX Spark GB10**（Blackwell 架构
 | **Agent 框架** | OpenClaw | OpenClaw | 底层 Agent 编排框架 |
 | **网关层** | RCClaw（自研） | — | 微信/飞书/Telegram 多通道接入 |
 | **编排层** | LangGraph | — | 有状态 ReAct Agent 图，支持 HITL |
-| **推理引擎** | TensorRT-LLM | TensorRT-LLM | NVIDIA 官方推理框架，Blackwell 专项优化 |
+| **推理引擎** | vLLM | — | 高性能推理框架，支持 CUDA 加速 |
 | **主推理 LLM** | Qwen3-80B-A3B-Thinking | — | MoE 架构，152GB，激活参数 ~3B |
 | **视觉 VLM** | Qwen2.5-VL-7B-Instruct | — | 屏幕截图语义理解，16GB |
 | **Embedding** | BGE-M3 | — | 稠密+稀疏+多向量三合一，~2GB |
@@ -108,26 +108,16 @@ OfficeMind 是一套完全运行在 **NVIDIA DGX Spark GB10**（Blackwell 架构
 
 | 模型 | 大小 | 端口 | 部署方式 | 用途 |
 |------|------|------|---------|------|
-| Qwen3-next-80b-a3b-thinking | 152 GB | 8000 | `trtllm-serve`（本地） | 主推理 LLM，MoE 激活 ~3B |
-| Qwen2.5-VL-7B-Instruct | 16 GB | 8001 | `trtllm-serve`（本地） | 视觉理解 VLM |
+| Qwen3-next-80b-a3b-thinking | 152 GB | 8000 | vLLM（本地） | 主推理 LLM，MoE 激活 ~3B |
+| Qwen2.5-VL-7B-Instruct | 16 GB | 8001 | vLLM（本地） | 视觉理解 VLM |
 | BGE-M3 + BGE-Reranker-v2-m3 | ~3 GB | 8002 | FastAPI（本地） | Embedding + Reranker |
 
-**硬件平台**：NVIDIA DGX Spark GB10，Blackwell 架构，128GB 统一内存，aarch64。TensorRT-LLM 对 Blackwell 架构有专项优化，推理吞吐量相比通用框架有显著提升。
+**硬件平台**：NVIDIA DGX Spark GB10，Blackwell 架构，128GB 统一内存，aarch64。vLLM 框架充分利用 CUDA 加速，支持 bfloat16 量化和 chunked-prefill 优化，实现极低延迟推理。
 
-**TensorRT-LLM 三种部署模式**（按场景选择）：
+**推理引擎选择**：
 
-```bash
-# 模式一：trtllm-serve — 单实例快速部署，OAI 兼容，适合原型验证
-python -m tensorrt_llm.serve /home/xsuper/models/Qwen3-next-80b-a3b-thinking \
-    --host 0.0.0.0 --port 8000
-
-# 模式二：Dynamo — 数据中心级多实例，适合生产环境
-dynamo serve graphs.disagg_router:Frontend -f config.yaml
-
-# 模式三：LLM Python API — 直接集成，最大灵活性
-from tensorrt_llm import LLM
-llm = LLM(model="/home/xsuper/models/Qwen3-next-80b-a3b-thinking")
-```
+- **vLLM**（当前）：快速部署，开箱即用，支持 OpenAI 兼容 API
+- **TensorRT-LLM**（未来优化）：NVIDIA 官方引擎，Blackwell 专项优化，性能进一步提升
 
 NemoClaw 配置（`.nemoclaw/config.json`）中所有 `base_url` 均指向 `localhost`，`api_key` 设为 `EMPTY`，确保零云端流量。
 
@@ -138,8 +128,8 @@ NemoClaw 配置（`.nemoclaw/config.json`）中所有 `base_url` 均指向 `loca
 ### 环境要求
 
 - NVIDIA DGX Spark GB10（或兼容 aarch64 + CUDA 12.x 环境）
-- Python 3.11（通过 conda 创建，系统 Python 3.13 不兼容 TRT-LLM）
-- Node.js 22+（NemoClaw 依赖）
+- Python 3.11+（系统已有）
+- vLLM 0.18.0+（已预装）
 
 ### 一键部署
 
@@ -148,20 +138,14 @@ NemoClaw 配置（`.nemoclaw/config.json`）中所有 `base_url` 均指向 `loca
 git clone https://github.com/RussellCooper-DJZ/OfficeMind.git
 cd OfficeMind
 
-# 2. 创建 Python 3.11 环境并安装依赖
-conda create -n ai311 python=3.11 -y
-conda activate ai311
+# 2. 安装依赖（可选，大多数已预装）
 pip install -r requirements.txt \
-    --index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    --extra-index-url https://pypi.nvidia.com
+    --index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 3. 下载 BGE 模型（约 3GB，使用 ModelScope 国内源）
-python scripts/download_models.py
-
-# 4. 配置环境变量
+# 3. 配置环境变量
 cp .env.example .env
 
-# 5. 一键启动全部服务
+# 4. 一键启动全部服务
 bash scripts/start_all_services.sh
 ```
 
@@ -173,8 +157,8 @@ bash scripts/start_all_services.sh
 |------|------|
 | `http://localhost:3000` | Open WebUI 图形对话界面 |
 | `http://localhost:7860/docs` | OfficeMind API 交互文档 |
-| `http://localhost:8000/v1` | TRT-LLM Qwen3-80B |
-| `http://localhost:8001/v1` | TRT-LLM Qwen2.5-VL |
+| `http://localhost:8000/v1` | vLLM Qwen3-80B |
+| `http://localhost:8001/v1` | vLLM Qwen2.5-VL |
 | `http://localhost:8002/health` | BGE API 健康检查 |
 
 ---
@@ -189,7 +173,7 @@ OfficeMind/
 │   └── main/agent.md            # OpenClaw Agent 定义
 ├── src/
 │   ├── inference/
-│   │   └── trtllm_engine.py     # TRT-LLM 推理引擎封装（三种部署模式）
+│   │   └── vllm_engine.py       # vLLM 推理引擎封装
 │   ├── agent/
 │   │   └── orchestrator.py      # LangGraph ReAct Agent（路由 + HITL）
 │   ├── rag/
@@ -202,8 +186,8 @@ OfficeMind/
 │   └── api/
 │       └── app.py               # FastAPI 后端入口
 ├── scripts/
-│   ├── start_all_services.sh    # 一键启动全栈（TRT-LLM + BGE + WebUI）
-│   ├── download_models.py       # ModelScope 下载 BGE 模型
+│   ├── start_all_services.sh    # 一键启动全栈（vLLM + BGE + WebUI）
+│   ├── download_models.py       # 下载 BGE 模型（可选）
 │   └── bge_api.py               # BGE Embedding/Reranker API 服务
 ├── docs/
 │   ├── connect_dgx_spark.bat    # Windows SSH 隧道一键脚本
@@ -219,7 +203,7 @@ OfficeMind/
 
 ### 技术创新性（30%）
 
-本项目的核心创新在于**三层 Claw 架构**的设计：RCClaw（自研多通道网关）→ NemoClaw（NVIDIA 官方控制层）→ OpenClaw（底层 Agent 框架），形成完整的本地化 AI 办公自动化闭环。在推理层，采用 TensorRT-LLM 替代传统 vLLM，充分发挥 Blackwell 架构的硬件优势。RAG 层引入 BGE-M3 的稠密+稀疏+多向量三合一检索能力，结合 Reranker 精排，实现企业级文档问答精度。VLM 驱动的"视觉感知"浏览器自动化突破了传统 DOM 选择器的局限性，可操作任何无 API 的遗留系统。
+本项目的核心创新在于**三层 Claw 架构**的设计：RCClaw（自研多通道网关）→ NemoClaw（NVIDIA 官方控制层）→ OpenClaw（底层 Agent 框架），形成完整的本地化 AI 办公自动化闭环。RAG 层引入 BGE-M3 的稠密+稀疏+多向量三合一检索能力，结合 Reranker 精排，实现企业级文档问答精度。VLM 驱动的"视觉感知"浏览器自动化突破了传统 DOM 选择器的局限性，可操作任何无 API 的遗留系统。
 
 ### 场景落地性（25%）
 
@@ -227,15 +211,15 @@ OfficeMind/
 
 ### 技术完整性（20%）
 
-项目包含完整的五层架构实现：网关层（RCClaw）、控制层（NemoClaw/OpenClaw）、编排层（LangGraph）、推理层（TRT-LLM）、RAG 层（BGE）。提供一键部署脚本、环境配置模板、API 文档、SSH 隧道工具，可在 DGX Spark 节点上完整运行演示。
+项目包含完整的五层架构实现：网关层（RCClaw）、控制层（NemoClaw/OpenClaw）、编排层（LangGraph）、推理层（vLLM）、RAG 层（BGE）。提供一键部署脚本、环境配置模板、API 文档、SSH 隧道工具，可在 DGX Spark 节点上完整运行演示。
 
 ### 平台适配性（15%）
 
-充分利用 DGX Spark GB10 的全栈能力：使用 NVIDIA 官方 TensorRT-LLM 推理引擎（支持 trtllm-serve / Dynamo / LLM API 三种模式）、NemoClaw DGX Spark 插件、ModelScope 国内镜像下载模型。128GB 统一内存支持同时加载 Qwen3-80B（152GB MoE 权重，激活 ~3B）+ Qwen2.5-VL-7B + BGE 模型，充分发挥 Blackwell 架构的统一内存优势。
+充分利用 DGX Spark GB10 的全栈能力：使用 NVIDIA 官方 NemoClaw DGX Spark 插件、vLLM 推理框架。128GB 统一内存支持同时加载 Qwen3-80B（152GB MoE 权重，激活 ~3B）+ Qwen2.5-VL-7B + BGE 模型，充分发挥 Blackwell 架构的统一内存优势。
 
 ### 演示效果（10%）
 
-通过 Open WebUI 提供直观的图形对话界面，FastAPI 提供 `/docs` 交互式 API 文档，SSH 隧道脚本实现一键本地访问。演示流程：自然语言指令 → NemoClaw 路由 → TRT-LLM 推理 → 结果推送，端到端链路清晰可见。
+通过 Open WebUI 提供直观的图形对话界面，FastAPI 提供 `/docs` 交互式 API 文档，SSH 隧道脚本实现一键本地访问。演示流程：自然语言指令 → NemoClaw 路由 → vLLM 推理 → 结果推送，端到端链路清晰可见。
 
 ---
 
@@ -249,9 +233,8 @@ OfficeMind/
 
 ## 相关资源
 
-- [NVIDIA TensorRT-LLM 官方文档](https://nvidia.github.io/TensorRT-LLM/)
-- [TensorRT-LLM GitHub 仓库](https://github.com/NVIDIA/TensorRT-LLM)
-- [NemoClaw DGX Spark 插件](https://github.com/HeKun-NVIDIA/nemoclaw_on_dgx_spark)
+- [NVIDIA NemoClaw DGX Spark 插件](https://github.com/HeKun-NVIDIA/nemoclaw_on_dgx_spark)
+- [vLLM 高性能推理框架](https://github.com/vllm-project/vllm)
 - [BGE-M3 模型（BAAI）](https://huggingface.co/BAAI/bge-m3)
 - [Qwen3 模型系列](https://huggingface.co/Qwen/Qwen3-30B-A3B)
 - [Open WebUI](https://github.com/open-webui/open-webui)
