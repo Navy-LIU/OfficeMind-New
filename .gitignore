@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Data & Models (too large for git)
+data/chroma_db/
+*.bin
+*.safetensors
+*.gguf
+/models/
+
+# Screenshots & temp files
+/tmp/
+logs/
+output/
+*.png
+*.jpg
+*.jpeg
+!docs/assets/*.png
+!docs/assets/*.jpg
+
+# OS
+.DS_Store
+Thumbs.db

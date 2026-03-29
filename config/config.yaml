@@ -1,0 +1,96 @@
+# OfficeMind Configuration
+# NVIDIA DGX Spark Hackathon — Full-Stack AI Office Automation
+
+# ─── LLM Backend ─────────────────────────────────────────────────────────────
+llm:
+  # Primary: Local Qwen-VL-Chat on DGX Spark (downloaded via modelscope)
+  provider: "openai_compatible"
+  base_url: "http://localhost:8000/v1"   # vLLM / TGI serving endpoint
+  model: "Qwen-VL-Chat"
+  api_key: "EMPTY"                        # local inference, no key needed
+  temperature: 0.1
+  max_tokens: 4096
+  timeout: 120
+
+  # Fallback: Any OpenAI-compatible API
+  fallback:
+    base_url: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
+    model: "${OPENAI_MODEL:-gpt-4o}"
+    api_key: "${OPENAI_API_KEY}"
+
+# ─── Vision Model ─────────────────────────────────────────────────────────────
+vision:
+  model_path: "/home/xsuper/models/qwen/Qwen-VL-Chat"
+  device: "cuda"
+  # pHash threshold for fast pre-filtering before VLM call
+  phash_threshold: 10
+  screenshot_dir: "/tmp/officemind_screenshots"
+  max_screenshot_age_sec: 300
+
+# ─── RAG Pipeline ─────────────────────────────────────────────────────────────
+rag:
+  # Embedding model (local BGE-M3 or NVIDIA NIM)
+  embedding:
+    provider: "local"                     # "local" | "nim"
+    model: "BAAI/bge-m3"
+    device: "cuda"
+    batch_size: 32
+
+  # Vector store
+  vector_store:
+    type: "chroma"                        # chroma | faiss | milvus
+    persist_dir: "/home/xsuper/models/officemind/chroma_db"
+    collection: "office_knowledge"
+
+  # Retrieval strategy
+  retrieval:
+    top_k: 10
+    hybrid_alpha: 0.7                     # 0.7 semantic + 0.3 BM25
+    rerank: true
+    rerank_model: "BAAI/bge-reranker-v2-m3"
+    mmr_lambda: 0.5
+    hyde_enabled: true                    # Hypothetical Document Embeddings
+
+  # Chunking
+  chunking:
+    strategy: "semantic"                  # semantic | recursive | sentence
+    chunk_size: 512
+    chunk_overlap: 64
+
+# ─── Browser Automation ───────────────────────────────────────────────────────
+browser:
+  cdp_url: "http://localhost:9222"        # Chrome DevTools Protocol endpoint
+  headless: false
+  stealth: true                           # anti-bot injection
+  human_delay_ms: [80, 200]              # randomized human-like delays
+  screenshot_on_action: true
+  max_retries: 3
+  timeout_ms: 30000
+
+# ─── Report Generator ─────────────────────────────────────────────────────────
+report:
+  output_dir: "./output/reports"
+  formats: ["markdown", "pdf", "docx"]
+  template_dir: "./assets/templates"
+  company_name: "${COMPANY_NAME:-OfficeMind Corp}"
+
+# ─── Agent Workflow ───────────────────────────────────────────────────────────
+agent:
+  max_iterations: 20
+  hitl_enabled: true                      # Human-in-the-Loop interrupt/resume
+  hitl_confidence_threshold: 0.6         # below this → ask human
+  audit_log: "./logs/agent_audit.jsonl"
+  tool_timeout_sec: 60
+
+# ─── OpenClaw Integration ─────────────────────────────────────────────────────
+openclaw:
+  enabled: "${OPENCLAW_ENABLED:-false}"
+  gateway_url: "${OPENCLAW_GATEWAY_URL:-http://localhost:18789}"
+  channels: ["telegram", "feishu", "wechat"]
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level: "INFO"
+  file: "./logs/officemind.log"
+  rotation: "10 MB"
+  retention: "7 days"
