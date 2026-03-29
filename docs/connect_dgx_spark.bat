@@ -11,7 +11,7 @@ echo   NVIDIA GB10 Blackwell / 128GB 统一内存
 echo ================================================
 echo.
 echo 正在建立 SSH 端口转发...
-echo 节点: 106.13.186.155:6059
+echo 节点: <DGX_HOST>:<DGX_PORT>
 echo.
 echo 转发端口映射:
 echo   本地 8000 → 节点 8000  (Qwen3-80B LLM API)
@@ -25,7 +25,7 @@ echo   http://localhost:3000   — Open WebUI (对话大模型)
 echo   http://localhost:8888   — JupyterLab
 echo   http://localhost:7860   — OfficeMind API
 echo.
-echo 按任意键开始连接... (首次需输入密码: QOW$y5)b)
+echo 按任意键开始连接... (首次需输入密码: <YOUR_PASSWORD>)
 pause > nul
 
 :: 使用 Windows 内置 SSH 建立多端口转发
@@ -35,11 +35,11 @@ ssh -N ^
     -L 8888:localhost:8888 ^
     -L 3000:localhost:3000 ^
     -L 7860:localhost:7860 ^
-    -p 6059 ^
+    -p <DGX_PORT> ^
     -o StrictHostKeyChecking=no ^
     -o ServerAliveInterval=60 ^
     -o ServerAliveCountMax=10 ^
-    xsuper@106.13.186.155
+    <DGX_USER>@<DGX_HOST>
 
 echo.
 echo 连接已断开。按任意键退出...

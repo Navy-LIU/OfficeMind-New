@@ -5,7 +5,7 @@ Layer 2: HyDE (Hypothetical Document Embeddings)
 Layer 3: Hybrid Search (Dense Vector + BM25)
 Layer 4: MMR Reranking (Maximal Marginal Relevance)
 
-Embedding: Qwen3-Embedding (local, /home/xsuper/models)
+Embedding: Qwen3-Embedding (local, $HOME/models)
 Vector DB: ChromaDB (persistent)
 """
 from __future__ import annotations

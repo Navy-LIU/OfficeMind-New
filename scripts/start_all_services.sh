@@ -2,8 +2,8 @@
 # OfficeMind — 一键启动所有服务
 # 在 DGX Spark GB10 上运行: bash start_all_services.sh
 
-CONDA="/home/xsuper/miniconda3/bin"
-MODELS="/home/xsuper/models"
+CONDA="$HOME/miniconda3/bin"
+MODELS="$HOME/models"
 LOG="/tmp/officemind_logs"
 mkdir -p $LOG
 

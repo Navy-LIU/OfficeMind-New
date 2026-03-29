@@ -4,8 +4,8 @@
 # Usage: bash scripts/serve_models.sh [llm|vlm|embed|all]
 
 set -e
-CONDA="/home/xsuper/miniconda3/bin"
-MODELS_DIR="/home/xsuper/models"
+CONDA="$HOME/miniconda3/bin"
+MODELS_DIR="$HOME/models"
 LOG_DIR="/tmp/officemind_logs"
 mkdir -p "$LOG_DIR"
 

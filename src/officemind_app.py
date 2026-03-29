@@ -2,7 +2,7 @@
 OfficeMind — Enterprise AI Office Automation
 =========================================================
 Built on NVIDIA DGX Spark GB10 (128GB Unified Memory)
-Model: Qwen3-80B-A3B-Thinking (local, /home/xsuper/models)
+Model: Qwen3-80B-A3B-Thinking (local, $HOME/models)
 Stack:
   ① LangGraph Agent + HITL          ← langgraph_engine.py
   ② VLM Screen Reader (Qwen-VL)     ← vision_engine.py
@@ -45,7 +45,7 @@ logging.basicConfig(
 logger = logging.getLogger("OfficeMind")
 
 # ── Config ────────────────────────────────────────────────────────────────────
-MODELS_DIR   = "/home/xsuper/models"
+MODELS_DIR   = "$HOME/models"
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:8000/v1")
 LLM_MODEL    = os.getenv("LLM_MODEL", "Qwen3-Thinking")
 LLM_API_KEY  = os.getenv("LLM_API_KEY", "EMPTY")

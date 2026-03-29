@@ -2,12 +2,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # OfficeMind — vLLM Serving Script for DGX Spark Node
 # Serves Qwen-VL-Chat as OpenAI-compatible API on port 8000
-# Node: spark-59  |  106.13.186.155:6059
+# Node: spark-59  |  <DGX_HOST>:<DGX_PORT>
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
-MODEL_PATH="/home/xsuper/models/qwen/Qwen-VL-Chat"
+MODEL_PATH="$HOME/models/qwen/Qwen-VL-Chat"
 PORT=8000
 GPU_MEM_UTIL=0.85
 MAX_MODEL_LEN=4096

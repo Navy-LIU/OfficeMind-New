@@ -11,9 +11,9 @@ Write-Host "  NVIDIA GB10 Blackwell / 128GB 统一内存" -ForegroundColor Cyan
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$DGX_HOST = "106.13.186.155"
-$DGX_PORT = "6059"
-$DGX_USER = "xsuper"
+$DGX_HOST = "<DGX_HOST>"
+$DGX_PORT = "<DGX_PORT>"
+$DGX_USER = "<DGX_USER>"
 
 Write-Host "节点信息:" -ForegroundColor Yellow
 Write-Host "  地址: ${DGX_HOST}:${DGX_PORT}" -ForegroundColor White

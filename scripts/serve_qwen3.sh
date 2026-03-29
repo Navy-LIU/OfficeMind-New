@@ -1,16 +1,16 @@
 #!/bin/bash
 # ============================================================
 # OfficeMind — Start Qwen3-80B-A3B-Thinking on DGX Spark GB10
-# Model: /home/xsuper/models/Qwen3-next-80b-a3b-thinking
+# Model: $HOME/models/Qwen3-next-80b-a3b-thinking
 # Hardware: NVIDIA GB10, 128GB unified memory
 # ============================================================
 
 set -e
 
-MODEL_PATH="/home/xsuper/models/Qwen3-next-80b-a3b-thinking"
+MODEL_PATH="$HOME/models/Qwen3-next-80b-a3b-thinking"
 MODEL_NAME="Qwen3-Thinking"
 PORT=8000
-LOG_DIR="/home/xsuper/logs"
+LOG_DIR="$HOME/logs"
 
 mkdir -p "$LOG_DIR"
 
@@ -23,7 +23,7 @@ echo "============================================"
 # Check model exists
 if [ ! -d "$MODEL_PATH" ]; then
     echo "ERROR: Model not found at $MODEL_PATH"
-    echo "Run: python3 -c \"from modelscope import snapshot_download; snapshot_download('qwen/Qwen3-next-80b-a3b-thinking', cache_dir='/home/xsuper/models')\""
+    echo "Run: python3 -c \"from modelscope import snapshot_download; snapshot_download('qwen/Qwen3-next-80b-a3b-thinking', cache_dir='$HOME/models')\""
     exit 1
 fi
 

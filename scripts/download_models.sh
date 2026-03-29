@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
 # OfficeMind — Model Download Script for DGX Spark Node
-# Node: spark-59  |  106.13.186.155:6059
-# Cache Dir: /home/xsuper/models
+# Node: spark-59  |  <DGX_HOST>:<DGX_PORT>
+# Cache Dir: $HOME/models
 #
 # Usage:
 #   bash scripts/download_models.sh [--all | --vlm | --embed | --rerank]
@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-CACHE_DIR="/home/xsuper/models"
+CACHE_DIR="$HOME/models"
 LOG_FILE="${CACHE_DIR}/download.log"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
@@ -39,7 +39,7 @@ download_vlm() {
 from modelscope import snapshot_download
 snapshot_download(
     'qwen/Qwen-VL-Chat',
-    cache_dir='/home/xsuper/models',
+    cache_dir='$HOME/models',
     ignore_patterns=['*.bin.index.json']
 )
 print("✓ Qwen-VL-Chat downloaded")
@@ -53,7 +53,7 @@ download_embed() {
 from modelscope import snapshot_download
 snapshot_download(
     'BAAI/bge-m3',
-    cache_dir='/home/xsuper/models'
+    cache_dir='$HOME/models'
 )
 print("✓ BGE-M3 downloaded")
 EOF
@@ -66,7 +66,7 @@ download_rerank() {
 from modelscope import snapshot_download
 snapshot_download(
     'BAAI/bge-reranker-v2-m3',
-    cache_dir='/home/xsuper/models'
+    cache_dir='$HOME/models'
 )
 print("✓ BGE-Reranker-v2-m3 downloaded")
 EOF

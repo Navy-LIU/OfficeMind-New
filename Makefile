@@ -2,7 +2,7 @@
 # Usage: make <target>
 # Platform: NVIDIA DGX Spark GB10 (128GB unified memory, Blackwell)
 
-CONDA = /home/xsuper/miniconda3/bin
+CONDA = $HOME/miniconda3/bin
 PYTHON = $(CONDA)/python
 PIP = $(CONDA)/pip
 
@@ -36,9 +36,9 @@ install:
 
 models:
 	$(PYTHON) -c "from modelscope import snapshot_download; \
-		snapshot_download('qwen/Qwen2.5-VL-7B-Instruct', cache_dir='/home/xsuper/models')"
+		snapshot_download('qwen/Qwen2.5-VL-7B-Instruct', cache_dir='$HOME/models')"
 	$(PYTHON) -c "from modelscope import snapshot_download; \
-		snapshot_download('Qwen/Qwen3-Embedding', cache_dir='/home/xsuper/models')"
+		snapshot_download('Qwen/Qwen3-Embedding', cache_dir='$HOME/models')"
 
 serve-llm:
 	@echo "Starting Qwen3-80B-A3B-Thinking on port 8000..."
