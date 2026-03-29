@@ -1,120 +1,104 @@
-#!/bin/bash
-# OfficeMind — 一键启动所有服务
-# 在 DGX Spark GB10 上运行: bash start_all_services.sh
+#!/usr/bin/env bash
+# OfficeMind 全栈启动脚本
+# 架构：NemoClaw 控制层 → TRT-LLM 推理层 → BGE RAG 层 → Open WebUI 界面层
+# 全部使用本地模型，无云端依赖
+# 用法: bash scripts/start_all_services.sh
+set -euo pipefail
 
-CONDA="$HOME/miniconda3/bin"
-MODELS="$HOME/models"
-LOG="/tmp/officemind_logs"
-mkdir -p $LOG
+CONDA_PYTHON=/home/xsuper/miniconda3/envs/ai311/bin/python
+MODELS=/home/xsuper/models
+LOGS=/tmp/officemind_logs
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+mkdir -p "$LOGS"
+
+port_in_use() { ss -tlnp 2>/dev/null | grep -q ":${1}"; }
 
 echo "=============================================="
-echo "  OfficeMind Services Startup"
-echo "  Platform: NVIDIA DGX Spark GB10 (128GB)"
+echo "  OfficeMind — NVIDIA DGX Spark GB10"
+echo "  TensorRT-LLM + NemoClaw 全本地部署"
 echo "=============================================="
 
-# ── 1. LLM: Qwen3-80B-A3B-Thinking ─────────────
-echo ""
-echo "[1/4] Starting LLM (Qwen3-80B) on port 8000..."
-pkill -f "port 8000" 2>/dev/null; sleep 1
+# ── Layer 1: TensorRT-LLM 推理层 ─────────────────
 
-nohup $CONDA/python -m vllm.entrypoints.openai.api_server \
-    --model $MODELS/Qwen3-next-80b-a3b-thinking \
-    --served-model-name Qwen3-Thinking \
-    --host 0.0.0.0 \
-    --port 8000 \
-    --trust-remote-code \
-    --dtype bfloat16 \
-    --max-model-len 16384 \
-    --gpu-memory-utilization 0.60 \
-    --tensor-parallel-size 1 \
-    --enable-chunked-prefill \
-    --max-num-seqs 16 \
-    > $LOG/llm.log 2>&1 &
-LLM_PID=$!
-echo "  ✓ LLM PID: $LLM_PID  →  tail -f $LOG/llm.log"
-
-# ── 2. VLM: Qwen2.5-VL-7B ───────────────────────
-echo ""
-echo "[2/4] Starting VLM (Qwen2.5-VL-7B) on port 8001..."
-VLM_MODEL=$(find $MODELS -name "config.json" -path "*VL*" 2>/dev/null | head -1 | xargs dirname 2>/dev/null)
-if [ -n "$VLM_MODEL" ]; then
-    pkill -f "port 8001" 2>/dev/null; sleep 1
-    nohup $CONDA/python -m vllm.entrypoints.openai.api_server \
-        --model "$VLM_MODEL" \
-        --served-model-name Qwen2.5-VL \
-        --host 0.0.0.0 \
-        --port 8001 \
-        --trust-remote-code \
-        --dtype bfloat16 \
-        --max-model-len 8192 \
-        --gpu-memory-utilization 0.18 \
-        --limit-mm-per-prompt image=5 \
-        > $LOG/vlm.log 2>&1 &
-    VLM_PID=$!
-    echo "  ✓ VLM PID: $VLM_PID  →  tail -f $LOG/vlm.log"
-    echo "  Model: $VLM_MODEL"
+# Qwen3-80B-A3B-Thinking — 主推理 LLM（MoE，激活参数~3B，速度快）
+if port_in_use 8000; then
+    echo "[skip]  Qwen3-80B already on :8000"
 else
-    echo "  ✗ VLM model not found, skipping"
+    echo "[1/5] TRT-LLM Qwen3-80B → :8000"
+    nohup "$CONDA_PYTHON" -m tensorrt_llm.serve \
+        "$MODELS/Qwen3-next-80b-a3b-thinking" \
+        --host 0.0.0.0 --port 8000 \
+        --trust-remote-code \
+        > "$LOGS/trtllm_qwen3.log" 2>&1 &
+    echo "  PID=$!  |  tail -f $LOGS/trtllm_qwen3.log"
 fi
 
-# ── 3. JupyterLab ────────────────────────────────
-echo ""
-echo "[3/4] Starting JupyterLab on port 8888..."
-pkill -f "jupyter" 2>/dev/null; sleep 1
+# Qwen2.5-VL-7B-Instruct — 视觉理解 VLM（屏幕截图语义分析）
+if port_in_use 8001; then
+    echo "[skip]  Qwen2.5-VL already on :8001"
+else
+    VL_PATH=$(find "$MODELS" -maxdepth 4 -name "config.json" 2>/dev/null \
+              | xargs grep -l "Qwen2-VL\|Qwen2\.5-VL" 2>/dev/null \
+              | head -1 | xargs dirname 2>/dev/null \
+              || echo "$MODELS/qwen/Qwen2___5-VL-7B-Instruct")
+    echo "[2/5] TRT-LLM Qwen2.5-VL → :8001  ($VL_PATH)"
+    nohup "$CONDA_PYTHON" -m tensorrt_llm.serve \
+        "$VL_PATH" \
+        --host 0.0.0.0 --port 8001 \
+        --trust-remote-code \
+        > "$LOGS/trtllm_qwenvl.log" 2>&1 &
+    echo "  PID=$!"
+fi
 
-# Install if not present
-$CONDA/pip show jupyterlab > /dev/null 2>&1 || \
-    $CONDA/pip install jupyterlab -q -i https://pypi.tuna.tsinghua.edu.cn/simple
+# ── Layer 2: BGE RAG 层 ───────────────────────────
 
-nohup $CONDA/jupyter lab \
-    --ip=0.0.0.0 \
-    --port=8888 \
-    --no-browser \
-    --NotebookApp.token='' \
-    --NotebookApp.password='' \
-    --notebook-dir=/home/xsuper \
-    > $LOG/jupyter.log 2>&1 &
-JUPYTER_PID=$!
-echo "  ✓ JupyterLab PID: $JUPYTER_PID  →  tail -f $LOG/jupyter.log"
+if port_in_use 8002; then
+    echo "[skip]  BGE API already on :8002"
+else
+    echo "[3/5] BGE Embedding/Reranker API → :8002"
+    nohup "$CONDA_PYTHON" "$PROJECT_DIR/scripts/bge_api.py" \
+        > "$LOGS/bge_api.log" 2>&1 &
+    echo "  PID=$!"
+fi
 
-# ── 4. Open WebUI ────────────────────────────────
-echo ""
-echo "[4/4] Starting Open WebUI on port 3000..."
-pkill -f "open-webui" 2>/dev/null; sleep 1
+# ── Layer 3: OfficeMind FastAPI 后端 ─────────────
 
-$CONDA/pip show open-webui > /dev/null 2>&1 || \
-    $CONDA/pip install open-webui -q -i https://pypi.tuna.tsinghua.edu.cn/simple
+if port_in_use 7860; then
+    echo "[skip]  OfficeMind API already on :7860"
+else
+    echo "[4/5] OfficeMind FastAPI → :7860"
+    cd "$PROJECT_DIR"
+    nohup "$CONDA_PYTHON" -m uvicorn src.api.app:app \
+        --host 0.0.0.0 --port 7860 --workers 2 \
+        > "$LOGS/officemind_api.log" 2>&1 &
+    echo "  PID=$!"
+fi
 
-nohup $CONDA/python -m open_webui.main serve \
-    --host 0.0.0.0 \
-    --port 3000 \
-    > $LOG/webui.log 2>&1 &
-WEBUI_PID=$!
-echo "  ✓ Open WebUI PID: $WEBUI_PID  →  tail -f $LOG/webui.log"
+# ── Layer 4: Open WebUI 图形界面 ──────────────────
 
-# ── Summary ──────────────────────────────────────
+if port_in_use 3000; then
+    echo "[skip]  Open WebUI already on :3000"
+else
+    echo "[5/5] Open WebUI → :3000"
+    nohup "$CONDA_PYTHON" -m open_webui.main serve \
+        --host 0.0.0.0 --port 3000 \
+        > "$LOGS/open_webui.log" 2>&1 &
+    echo "  PID=$!"
+fi
+
+# ── 状态汇报 ─────────────────────────────────────
+
 echo ""
-echo "=============================================="
-echo "  All services started!"
-echo "=============================================="
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " 服务地址（运行 connect_spark.bat 建立 SSH 隧道后访问）"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " http://localhost:3000   Open WebUI          图形对话界面"
+echo " http://localhost:7860   OfficeMind API      /docs 查看接口"
+echo " http://localhost:8000   TRT-LLM Qwen3-80B  主推理 LLM"
+echo " http://localhost:8001   TRT-LLM Qwen2.5-VL 视觉理解 VLM"
+echo " http://localhost:8002   BGE API             Embedding + Reranker"
 echo ""
-echo "  Service         Port   Status"
-echo "  ─────────────────────────────"
-echo "  Qwen3-80B LLM   8000   loading (~3-5min)"
-echo "  Qwen2.5-VL VLM  8001   loading (~1-2min)"
-echo "  JupyterLab       8888   ready"
-echo "  Open WebUI       3000   loading (~30s)"
-echo ""
-echo "  Windows 端口转发（MobaXterm/VSCode）："
-echo "  本地 8000 → 节点 8000  (LLM API)"
-echo "  本地 8001 → 节点 8001  (VLM API)"
-echo "  本地 8888 → 节点 8888  (JupyterLab)"
-echo "  本地 3000 → 节点 3000  (Open WebUI 对话界面)"
-echo ""
-echo "  浏览器访问："
-echo "  http://localhost:8888  →  JupyterLab"
-echo "  http://localhost:3000  →  Open WebUI (对话大模型)"
-echo "  http://localhost:8000/docs  →  LLM API Docs"
-echo ""
-echo "  查看日志: tail -f $LOG/llm.log"
-echo "=============================================="
+echo " NemoClaw 配置: .nemoclaw/config.json（全本地，无云端依赖）"
+echo " 日志目录: $LOGS/"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
