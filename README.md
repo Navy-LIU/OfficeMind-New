@@ -75,7 +75,7 @@ OfficeMind 是一套完全运行在 **NVIDIA DGX Spark GB10**（Blackwell 架构
 
 ### 报告生成器
 
-由 **Qwen3-80B-A3B-Thinking** 驱动，支持日报、周报、月报、会议纪要、销售报告等多种格式，输出标准 Markdown，可导出 Word/PDF，并通过 RCClaw 网关推送到企业 IM。
+由 **Qwen2.5-70B** 驱动，支持日报、周报、月报、会议纪要、销售报告等多种格式，输出标准 Markdown，可导出 Word/PDF，并通过 RCClaw 网关推送到企业 IM。
 
 ### 邮件智能处理
 
