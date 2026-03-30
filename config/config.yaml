@@ -1,96 +1,111 @@
-# OfficeMind Configuration
-# NVIDIA DGX Spark Hackathon — Full-Stack AI Office Automation
+# =============================================================================
+# OfficeMind — 服务配置（DGX Spark GB10）
+# 节点：spark-59 | GPU: NVIDIA GB10 Blackwell | 统一内存: 128 GB | CUDA: 13.0
+# =============================================================================
 
-# ─── LLM Backend ─────────────────────────────────────────────────────────────
-llm:
-  # Primary: Local Qwen-VL-Chat on DGX Spark (downloaded via modelscope)
-  provider: "openai_compatible"
-  base_url: "http://localhost:8000/v1"   # vLLM / TGI serving endpoint
-  model: "Qwen-VL-Chat"
-  api_key: "EMPTY"                        # local inference, no key needed
-  temperature: 0.1
-  max_tokens: 4096
-  timeout: 120
+# ── 节点信息 ──────────────────────────────────────────────────────────────────
+node:
+  arch:       "aarch64"
+  gpu:        "NVIDIA GB10 Blackwell"
+  cuda:       "13.0"
+  memory_gb:  128
+  storage_tb: 3.7
+  user:       "xsuper"
+  models_dir: "/home/xsuper/models"
+  logs_dir:   "/home/xsuper/logs/officemind"
 
-  # Fallback: Any OpenAI-compatible API
-  fallback:
-    base_url: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
-    model: "${OPENAI_MODEL:-gpt-4o}"
-    api_key: "${OPENAI_API_KEY}"
+# ── 服务端口（仅开放 SSH + 2 个模型端口）────────────────────────────────────
+ports:
+  ssh:       6059   # 对外开放
+  llm:       8000   # 对外开放 — Qwen2.5-72B 主推理
+  vlm:       8001   # 对外开放 — llava:7b 视觉理解
+  embedding: 8002   # 内部使用
+  agent:     7860   # 内部使用
+  ollama:    11434  # 内部使用（VLM 后端）
+  jupyter:   8888   # 内部使用
 
-# ─── Vision Model ─────────────────────────────────────────────────────────────
-vision:
-  model_path: "/home/xsuper/models/qwen/Qwen-VL-Chat"
-  device: "cuda"
-  # pHash threshold for fast pre-filtering before VLM call
-  phash_threshold: 10
-  screenshot_dir: "/tmp/officemind_screenshots"
-  max_screenshot_age_sec: 300
+# ── 模型配置 ──────────────────────────────────────────────────────────────────
+models:
+  llm:
+    name:       "qwen2.5:72b-gb10"
+    backend:    "llama_cpp"
+    path:       "${MODEL_DIR:-/home/xsuper/models}/qwen2.5-72b-instruct-q4_k_m.gguf"
+    gpu_layers: -1       # -1 = 全部层卸载到 GPU
+    n_ctx:      4096
+    n_threads:  8
+    vram_gb:    46       # 实测占用
 
-# ─── RAG Pipeline ─────────────────────────────────────────────────────────────
-rag:
-  # Embedding model (local BGE-M3 or NVIDIA NIM)
+  vlm:
+    name:         "llava:7b"
+    backend:      "ollama"
+    ollama_model: "llava:7b"
+    gpu:          true
+
   embedding:
-    provider: "local"                     # "local" | "nim"
-    model: "BAAI/bge-m3"
-    device: "cuda"
-    batch_size: 32
+    name:    "qwen3-embedding"
+    path:    "${MODEL_DIR:-/home/xsuper/models}/Qwen/Qwen3-Embedding"
+    backend: "sentence_transformers"
 
-  # Vector store
+  reranker:
+    name:    "bge-reranker-v2-m3"
+    backend: "FlagEmbedding"
+
+# ── Ollama 配置 ───────────────────────────────────────────────────────────────
+ollama:
+  binary:       "${HOME}/.local/bin/ollama"
+  host:         "0.0.0.0:11434"
+  models_dir:   "${HOME}/.ollama/models"
+  cuda_lib:     "/usr/local/cuda-13.0/targets/sbsa-linux/lib"
+  cuda_v13:     "${HOME}/.local/lib/ollama/cuda_v13"
+  num_parallel: 2
+  # ⚠️ 首次运行前必须执行 GPU 修复脚本
+  gpu_fix:      "scripts/fix_ollama_gpu.sh"
+
+# ── RAG 配置 ──────────────────────────────────────────────────────────────────
+rag:
+  chunk_size:    512
+  chunk_overlap: 64
+  top_k:         10
+  rerank_top_n:  5
+  hyde_enabled:  true
+  mmr_lambda:    0.5
   vector_store:
-    type: "chroma"                        # chroma | faiss | milvus
-    persist_dir: "/home/xsuper/models/officemind/chroma_db"
-    collection: "office_knowledge"
+    type:        "chroma"
+    persist_dir: "${MODEL_DIR:-/home/xsuper/models}/officemind/chroma_db"
+    collection:  "office_knowledge"
 
-  # Retrieval strategy
-  retrieval:
-    top_k: 10
-    hybrid_alpha: 0.7                     # 0.7 semantic + 0.3 BM25
-    rerank: true
-    rerank_model: "BAAI/bge-reranker-v2-m3"
-    mmr_lambda: 0.5
-    hyde_enabled: true                    # Hypothetical Document Embeddings
-
-  # Chunking
-  chunking:
-    strategy: "semantic"                  # semantic | recursive | sentence
-    chunk_size: 512
-    chunk_overlap: 64
-
-# ─── Browser Automation ───────────────────────────────────────────────────────
+# ── 浏览器自动化 ──────────────────────────────────────────────────────────────
 browser:
-  cdp_url: "http://localhost:9222"        # Chrome DevTools Protocol endpoint
-  headless: false
-  stealth: true                           # anti-bot injection
-  human_delay_ms: [80, 200]              # randomized human-like delays
+  cdp_url:              "http://localhost:9222"
+  headless:             true
+  stealth:              true
+  human_delay_ms:       [80, 200]
   screenshot_on_action: true
-  max_retries: 3
-  timeout_ms: 30000
+  max_retries:          3
+  timeout_ms:           30000
 
-# ─── Report Generator ─────────────────────────────────────────────────────────
+# ── 报告生成 ──────────────────────────────────────────────────────────────────
 report:
-  output_dir: "./output/reports"
-  formats: ["markdown", "pdf", "docx"]
+  output_dir:   "./output/reports"
+  formats:      ["markdown", "pdf", "docx"]
   template_dir: "./assets/templates"
-  company_name: "${COMPANY_NAME:-OfficeMind Corp}"
 
-# ─── Agent Workflow ───────────────────────────────────────────────────────────
+# ── Agent 配置 ────────────────────────────────────────────────────────────────
 agent:
-  max_iterations: 20
-  hitl_enabled: true                      # Human-in-the-Loop interrupt/resume
-  hitl_confidence_threshold: 0.6         # below this → ask human
-  audit_log: "./logs/agent_audit.jsonl"
-  tool_timeout_sec: 60
+  max_steps:    8
+  temperature:  0.1
+  hitl_enabled: true                  # Human-in-the-Loop 人工兜底
+  hitl_confidence_threshold: 0.6     # 低于此置信度时请求人工确认
+  audit_log:    "./logs/agent_audit.jsonl"
+  tools:
+    - vlm_screen_reader
+    - rag_document_qa
+    - browser_operator
+    - report_generator
 
-# ─── OpenClaw Integration ─────────────────────────────────────────────────────
-openclaw:
-  enabled: "${OPENCLAW_ENABLED:-false}"
-  gateway_url: "${OPENCLAW_GATEWAY_URL:-http://localhost:18789}"
-  channels: ["telegram", "feishu", "wechat"]
-
-# ─── Logging ──────────────────────────────────────────────────────────────────
+# ── 日志 ──────────────────────────────────────────────────────────────────────
 logging:
-  level: "INFO"
-  file: "./logs/officemind.log"
-  rotation: "10 MB"
+  level:     "INFO"
+  file:      "./logs/officemind.log"
+  rotation:  "10 MB"
   retention: "7 days"
