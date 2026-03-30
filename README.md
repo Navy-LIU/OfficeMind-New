@@ -5,11 +5,14 @@
 ![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**OfficeMind** 是为 **NVIDIA 首届 DGX Spark 全栈 AI 开发黑客松** 打造的参赛项目。它是一个完全运行在本地算力节点上的企业级 AI 办公自动化助手，将大语言模型（LLM）、视觉语言模型（VLM）、检索增强生成（RAG）与浏览器自动化深度融合，实现“看屏幕、读文档、自动操作”的全链路办公自动化。
+[![Platform](https://img.shields.io/badge/Platform-NVIDIA%20DGX%20Spark%20GB10-76b900?style=for-the-badge&logo=nvidia)](https://www.nvidia.com/en-us/products/workstations/dgx-spark/)
+[![Engine](https://img.shields.io/badge/Engine-vLLM-76b900?style=for-the-badge&logo=nvidia)](https://github.com/vllm-project/vllm)
+[![Framework](https://img.shields.io/badge/Framework-NemoClaw%20%2B%20OpenClaw-blue?style=for-the-badge)](https://github.com/HeKun-NVIDIA/nemoclaw_on_dgx_spark)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 ---
 
-## 🌟 核心亮点（黑客松评审维度）
+## 项目简介
 
 ### 1. 技术创新性 (30%)
 - **多模态屏幕理解 (VLM + pHash)**：摒弃传统的脆弱 DOM 规则和 OCR，采用 `llava:7b` 实时理解屏幕截图。创新性引入 **pHash 感知哈希预过滤**，仅在屏幕发生实质性变化时才调用 VLM，将视觉推理开销降低 60% 以上。
@@ -38,7 +41,7 @@
 
 ---
 
-## 🏗️ 系统架构
+## 系统架构
 
 OfficeMind 采用微服务架构，各组件通过 REST API 通信，由核心 Agent 进行统一编排：
 
@@ -78,7 +81,7 @@ OfficeMind 采用微服务架构，各组件通过 REST API 通信，由核心 A
 确保节点已安装 `miniconda3` (Python 3.13) 和系统级 CUDA 13.0。
 
 ```bash
-# 克隆仓库
+# 1. 克隆仓库
 git clone https://github.com/RussellCooper-DJZ/OfficeMind.git
 cd OfficeMind
 
@@ -123,7 +126,7 @@ bash scripts/restart_all.sh
 
 ---
 
-## 💡 典型使用场景演示
+## 评审维度说明
 
 ### 场景一：智能报销填报
 **输入**：自然语言指令“打开OA系统，填写差旅报销申请，金额3500元，出差地点北京”。
@@ -141,4 +144,15 @@ bash scripts/restart_all.sh
 - **算力支持**：NVIDIA DGX Spark 云算力节点 (GB10)
 
 ---
+
+## 相关资源
+
+- [NVIDIA NemoClaw DGX Spark 插件](https://github.com/HeKun-NVIDIA/nemoclaw_on_dgx_spark)
+- [vLLM 高性能推理框架](https://github.com/vllm-project/vllm)
+- [BGE-M3 模型（BAAI）](https://huggingface.co/BAAI/bge-m3)
+- [Qwen3 模型系列](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+- [Open WebUI](https://github.com/open-webui/open-webui)
+
+---
+
 *本项目为 NVIDIA 首届 DGX Spark 全栈 AI 开发黑客松参赛作品。*
