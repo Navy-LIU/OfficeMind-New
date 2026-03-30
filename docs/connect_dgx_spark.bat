@@ -14,7 +14,7 @@ echo 正在建立 SSH 端口转发...
 echo 节点: <DGX_HOST>:<DGX_PORT>
 echo.
 echo 转发端口映射:
-echo   本地 8000 → 节点 8000  (Qwen3-80B LLM API)
+echo   本地 8000 → 节点 8000  (Qwen2.5-70b LLM API)
 echo   本地 8001 → 节点 8001  (Qwen2.5-VL VLM API)
 echo   本地 8888 → 节点 8888  (JupyterLab)
 echo   本地 3000 → 节点 3000  (Open WebUI 对话界面)
