@@ -1,6 +1,6 @@
 # OfficeMind: DGX Spark Hackathon 专家级部署指南
 
-**作者**: Manus AI
+**作者**: Russell Cooper
 **日期**: 2026年3月31日
 
 ## 1. 引言

@@ -69,7 +69,7 @@ docker exec -it officemind-ollama ollama pull glm-ocr:bf16
 ## 🤝 团队信息
 *   **参赛目标**: 挑战 NVIDIA DGX Spark Hackathon 最高分。
 *   **核心理念**: 极致压榨硬件性能，用 AI 重新定义办公效率。
-*   **技术支持**: Manus AI
+*   **技术支持**: Russell Cooper
 
 ---
 *本项目为 NVIDIA 首届 DGX Spark 全栈 AI 开发黑客松参赛作品。*
