@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # 1. Ollama 服务 (用于 VLM, OCR, Agent 路由)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: officemind-ollama
+    volumes:
+      - ./ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: always
+
+  # 2. vLLM 服务 (用于核心推理 Qwen3.5:35b)
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: officemind-vllm
+    volumes:
+      - /home/xsuper/models:/models
+    ports:
+      - "8000:8000"
+    command: >
+      --model /models/qwen3.5-35b-instruct
+      --gpu-memory-utilization 0.7
+      --max-model-len 8192
+      --enforce-eager
+      --served-model-name qwen3.5:35b
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: always
+
+  # 3. OfficeMind Agent 服务
+  agent:
+    build: .
+    container_name: officemind-agent
+    environment:
+      - LLM_URL=http://vllm:8000
+      - VLM_URL=http://ollama:11434
+    ports:
+      - "7860:7860"
+    depends_on:
+      - vllm
+      - ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: always
+
+networks:
+  default:
+    name: officemind-network
