@@ -68,7 +68,7 @@ OfficeMind 依赖以下大型模型，请确保它们已下载并放置在 GB10 
 
 ```bash
 ssh xsuper@106.13.186.155 -p 6059
-# 输入密码: QOW$y5)b
+# 输入密码: <YOUR_PASSWORD>
 
 git clone https://github.com/RussellCooper-DJZ/OfficeMind.git
 cd OfficeMind

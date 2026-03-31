@@ -45,7 +45,7 @@ if (-not $sshPath) {
 
 Write-Host "SSH 已就绪: $($sshPath.Source)" -ForegroundColor Green
 Write-Host ""
-Write-Host "首次连接需输入密码: QOW`$y5)b" -ForegroundColor Yellow
+Write-Host "首次连接需输入密码: <YOUR_PASSWORD>" -ForegroundColor Yellow
 Write-Host "（建议配置 SSH 密钥免密登录，见下方说明）" -ForegroundColor Gray
 Write-Host ""
 Write-Host "按 Enter 开始连接，Ctrl+C 断开..." -ForegroundColor Cyan
