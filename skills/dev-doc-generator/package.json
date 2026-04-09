@@ -1,0 +1,26 @@
+{
+  "name": "devdoc",
+  "version": "1.0.0",
+  "description": "Generate development documentation and task breakdown from requirements",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "devdoc": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "devdoc",
+    "documentation",
+    "cli",
+    "task",
+    "generator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0"
+  }
+}
